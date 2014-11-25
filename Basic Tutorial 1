@@ -1,5 +1,166 @@
-教程简介：在本教程中我们将要介绍OGRE最基本的一些对象的构建，它包括：场景管理器（SceneManager），场景节点（SceneNode）和实体（Entity ）
-对象。我们的内容不会包含很多的代码；相反的我们将注意力集中在你开始学习OGRE的一般的概念上。
-  在你学习本教程的过程中你应该慢慢的向你的项目中添加代码并且观察加入的代码产生的结果。除了自己动手写代码，没有其他的方法可以让你
-熟悉这些概念。忍住冲动，耐心的读完吧。  
+教程简介：在本教程中我们将要介绍OGRE最基本的一些对象的构建，它包括：场景管理器（SceneManager），场景节点（SceneNode）和实体（Entity ）对象。我们的内容不会包含很多的代码；相反的我们将注意力集中在你开始学习OGRE的一般的概念上。
+  在你学习本教程的过程中你应该慢慢的向你的项目中添加代码并且观察加入的代码产生的结果。除了自己动手写代码，没有其他的方法可以让你熟悉这些概念。忍住冲动，耐心的读完吧。  
 
+如果你在学习本教程的过程中遇到了任何问题，你应该将这个问题发布在帮助论坛（http://www.ogre3d.org/forums/viewforum.php?f=2）上。
+
+前提条件-------------------------------------------------------------------------------------------------------------------------
+  本教程认为你已经知道如何使用C++语言编程并且能够设置和编译Ogre程序。
+  本教程同样认为你已经使用Ogre Wiki Tutorial Framework、CMake或者Ogre Appwizard创建了一个工程。如果没有的话请看http://www.ogre3d.org/tikiwiki/tiki-index.php?page=Setting+Up+An+Application吧。
+
+目录—————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
+-----------------------------------------------------------------------------------------------------------------------------
+--前提条件
+--开始
+----初始代码
+----疑难排除
+------MessageBox函数问题
+------缺少配置文件或DLL
+------资源或插件问题
+------在Visual Studio或Code::Blocks中不能启动程序
+--Ogre如何工作
+----场景管理器
+----实体
+----场景节点
+--你的第一个Ogre程序
+--坐标系与向量
+--添加另外一个对象
+--实体更多介绍
+--场景更多介绍
+--应该尝试去做的
+----缩放
+----旋转
+--Ogre环境
+----DLL和插件
+------Main库
+------插件
+------第三方库和辅助库
+------测试与发布
+--------例子
+----配置文件
+--总结
+-----------------------------------------------------------------------------------------------------------------------------
+—————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
+
+开始
+—————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
+初始代码
+-----------------------------------------------------------------------------------------------------------------------------
+    在本教程中我们将使用之前写好的代码。除了我们将要加入createScene 函数的代码外你应该忽视所有其他的代码。我们将在后面的教程中进一步解释Ogre程序是如何运行的，但是现在我们将从最基本的部分开始。
+    请阅读"setting up an application"(http://www.ogre3d.org/tikiwiki/tiki-index.php?page=Setting+Up+An+Application)去学习如何使用你的IDE和环境创建一个初始的项目。
+    创建名称为Tutorial的项目
+    将教程程序框架添加到你的项目中：
+    ---------------------------------
+    --  BaseApplication.h          --
+	--  BaseApplication.cpp        --
+	--  TutorialApplication.h      --
+	--  TutorialApplication.cpp    --
+	---------------------------------
+	你可以从Ogre Wiki Tutorial Framework(http://www.ogre3d.org/tikiwiki/tiki-index.php?page=Ogre+Wiki+Tutorial+Framework)得到这些文件，或者使用 Ogre AppWizard(https://bitbucket.org/jacmoe/ogreappwizards/downloads)。
+	TutorialApplication.cpp是我们教程将要使用的唯一一个文件，并且我们只会修改其中的createScene()成员函数。
+	TutorialApplication.cpp应该包含如下的代码（为了保持整洁，移除了头文件注释）。
+	-------------------------------------------------------------------------------------------------------------------------
+	#include "TutorialApplication.h"
+ 
+	TutorialApplication::TutorialApplication(void)
+	{
+	}
+ 
+	TutorialApplication::~TutorialApplication(void)
+	{
+	}
+ 
+	//-------------------------------------------------------------------------------------
+	void TutorialApplication::createScene(void)
+	{
+    	// Set the scene's ambient light
+    	mSceneMgr->setAmbientLight(Ogre::ColourValue(0.5f, 0.5f, 0.5f));
+ 
+    	// Create an Entity
+	 	Ogre::Entity* ogreHead = mSceneMgr->createEntity("Head", "ogrehead.mesh");
+ 
+    	// Create a SceneNode and attach the Entity to it
+    	Ogre::SceneNode* headNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("HeadNode");
+    	headNode->attachObject(ogreHead);
+ 
+    	// Create a Light and set its position
+    	Ogre::Light* light = mSceneMgr->createLight("MainLight");
+    	light->setPosition(20.0f, 80.0f, 50.0f);
+	}
+ 
+ 
+ 
+	#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
+	#define WIN32_LEAN_AND_MEAN
+	#include "windows.h"
+	#endif
+ 
+	#ifdef __cplusplus
+	extern "C" {
+	#endif
+ 
+	#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
+ 		INT WINAPI WinMain( HINSTANCE hInst, HINSTANCE, LPSTR strCmdLine, INT )
+	#else
+    	int main(int argc, char *argv[])
+	#endif
+    	{
+        	// Create application object
+        	TutorialApplication app;
+ 
+        	try 
+        	{
+        	 	app.go();
+        	} catch( Ogre::Exception& e ) {
+	#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
+            	MessageBox( NULL, e.getFullDescription().c_str(), "An exception has occured!", MB_OK | MB_ICONERROR| MB_TASKMODAL);
+	#else
+            	std::cerr << "An exception has occured: " << e.getFullDescription().c_str() << std::endl;
+	#endif
+        	}
+ 
+        	return 0;
+    	}
+ 
+	#ifdef __cplusplus
+	}
+	#endif
+-----------------------------------------------------------------------------------------------------------------------------
+	编译并运行你的程序，以保证你的环境配置是正确的。如果你的程序运行了，使用WASD健移动物体、使用鼠标看看周围。按下Esc健退出程序。
+-----------------------------------------------------------------------------------------------------------------------------
+	
+	疑难排除
+	-------------------------------------------------------------------------------------------------------------------------
+	如果你遇到了问题，检查Setting Up An Application(http://www.ogre3d.org/tikiwiki/tiki-index.php?page=Setting+Up+An+Application)你的编译器是否正确的设置了，后者查看Ogre.log获取更多的详细信息。如果你需要进一步的帮助，在论坛上搜索(http://www.ogre3d.org/forums/search.php)，也许你的问题别人已经遇到过很多次了。如果这是一个新的问题，请阅读论坛规则（http://www.ogre3d.org/forums/viewtopic.php?t=11886），然后提问（http://www.ogre3d.org/forums/viewforum.php?f=2）。请确保从你的Ogre.log、异常、错误信息或者调试后的痕迹（debugger back traces）。
+	注意：以后的教程将不会包含疑难排除信息，如果你遇到了问题那么请特别注意下面的部分。
+	MessageBox问题-----------------------------------------------------------------------------------------------------------
+	如果你使用的Visual Studio并且本项目打开了Unicode支持，那么你可能会遇到下面的错误：
+	-------------------------------------------------------------------------------------------------------------------------
+	-- error C2664: 'MessageBoxW' : cannot convert parameter 2 from 'const char *' to 'LPCWSTR'
+    --      Types pointed to are unrelated; conversion requires reinterpret_cast, C-style cast or  function-style cast
+    -------------------------------------------------------------------------------------------------------------------------
+    产生这个问题的原因是MessageBox函数（在这个情况下）需要Unicode编码，但是我们却给它一个ANSI字符串。为了解决这个问题，将下面这一行：
+    MessageBox( NULL, e.what(), "An exception has occurred!", MB_OK |   MB_IConerror  | MB_TASKMODAL);
+    改为：
+    MessageBoxA( NULL, e.what(), "An exception has occurred!", MB_OK |   MB_IConerror  | MB_TASKMODAL);
+    或者你可以在编译器中将你的文本格式从Unicode改为ANSI。这样的话你将失去国际语言的支持。
+    这样做的理由是：MessageBox将会根据项目的配置自动的解析为MessageBoxA (ANSI)或者MessageBoxW (Wide/Unicode)。我们通过显式的指定它使用ANSI来解决这个问题。
+    -------------------------------------------------------------------------------------------------------------------------
+    
+    丢失配置文件或者DLL
+    -------------------------------------------------------------------------------------------------------------------------
+    	如果你试着启动刚创建的程序但是程序却抱怨（提示）丢失DLL或配置文件（*.cfg），那么你很有可能没有从OgreSDK文件夹中将它们复制过来。在Visual Studio中，当你在release模式下编译你的程序，它把release的可执行文件放在了[ProjectFolder]\bin\release文件夹中，debug的可执行文件放在了[ProjectFolder]\bin\debug 文件夹中。你必须从OgreSDK文件夹中复制所有的".dll"和".cfg"文件到正确的文件夹中。也就是从[OgreSDK]\bin\release复制到[ProjectFolder]\bin\release、[OgreSDK]\bin\debug到[ProjectFolder]\bin\debug。你同样需要编辑resources.cfg文件以指出正确的路径。下一小节将会更加详细的介绍。
+    -------------------------------------------------------------------------------------------------------------------------
+    
+    资源或插件问题
+    -------------------------------------------------------------------------------------------------------------------------
+    	确保在一个相同的包含可执行文件的文件夹下有plugins.cfg和resources.cfg文件。plugins.cfg告诉OGRE有哪些渲染库是可用的（Direct3D9，OpenGL,etc）。resources.cfg是给ExampleApplication使用的，它指出了纹理、网格模型和脚本的路径。它们都是文本文件（指配置文件），所以编辑它们以保证路径是正确的。否则你的OGRE可能没有任何渲染库，或者你的屏幕或者Ogre.log将显示类似下面的错误：
+    	Description: ../../Media/packs/OgreCore.zip - error whilst opening archive: Unable to read zip file
+    	如果是这样的话，打开resources.cfg文件，改变它包含的位置使它指向Media文件夹中包含该资源的位置。注意：在这些路径中你不能使用诸如$(SomeVariable)之类的环境变量。
+   	-------------------------------------------------------------------------------------------------------------------------
+   	
+   	在Visual Studio或者Code::Blocks不能启动程序
+   	-------------------------------------------------------------------------------------------------------------------------
+   	
+    
+    
+    
