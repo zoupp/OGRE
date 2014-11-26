@@ -184,7 +184,23 @@ Ogre是如何工作的
 		
 	SceneNode 基础
 	-------------------------------------------------------------------------------------------------------------------------
-   		正如上面提到的，
+   		正如上面提到的，SceneNode记录了所有附加到它上面的物体的位置和方向。只有当你将创建的实体附加到SceneNode上时，实体才会被渲染。此外SceneNode 不是在屏幕上显示的对象，只有当你创建了一个SceneNode并将一个实体附加到它上面时，它才会在屏幕上显示。
+   		SceneNode上可以任意数量的对象，也就是说你有一个角色对象沿着屏幕走，你想在角色周围创建一个光源。那么你应该这样做：首先创建一个SceneNode，然后创建一个角色实体并将实体附加到SceneNode上，接着你将创建一个光源对象并将光源附加到SceneNode上。SceneNode同样可以附加到SceneNode上，这意味着你可以SceneNode可以继承SceneNode。在后面的教程中我们将介绍更多的关于SceneNode的高级应用。
+   		关于SceneNode一个很重要的概念需要注意：SceneNode的位置通常是相对于父SceneNode的，每个SceneManager都有一个根节点，所有其他的SceneNode都可以附加到它上面。
+   	-------------------------------------------------------------------------------------------------------------------------
+   	
+  你的第一个Ogre程序
+  ———————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
+  	现在回到我们之前创建的代码。找到TutorialApplication::createScene成员函数，在本教程中，我们只会修改这个函数的内容。为了能看到我们做了什么，我们首先需要做的是给场景添加环境光。我们通过SceneManager::setAmbientLight函数并指定我们想要的颜色来创建环境光。注意：ColourValue的构造函数需要红、绿、蓝三种颜色，颜色值的范围为0-1，在createScene中加入下面这行：
+  	mSceneMgr->setAmbientLight(Ogre::ColourValue(0.5f, 0.5f, 0.5f));
+  	接下来我们要做的是创建一个实体，我们通过调用SceneManager的createEntity成员函数来创建一个实体。
+  	Ogre::Entity* ogreHead = mSceneMgr->createEntity("Head", "ogrehead.mesh");
+  	好了，有几个问题出现了：
+  		（1）mSceneMgr从哪儿来的？
+  		（2）我们调用的函数的参数是什么？
+  	mSceneMgr变量包含了当前的SceneManager对象。就目前而言，这是由BaseApplication完成的。
+  	createEntity接受2个参数：
+  		（1）
     
     
     
