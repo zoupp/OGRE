@@ -222,6 +222,118 @@ Ogre是如何工作的
   ———————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
     在我们进行深入介绍之前，我们需要讲一下屏幕坐标和Ogre向量（Vector）对象。Ogre（其他的很多图像引擎也是类似）使用X、Z轴作为水平面，Y轴作为垂直轴。当你现在看着你的显示器的时候，X轴从显示器的左边到右边，右边是X的正方向。Y轴从你的显示器的底部到顶部，顶部为正方向。Z轴从显示器的里面指向外面，指向外面的为正方向。
     注意Ogre Head是如何沿着Z轴朝向我们的？这很有可能是网格（mesh）和相机（camera）的位置和朝向属性。我们将在后面的教程中介绍相机（camera），但是现在我们需要认识到Ogre Head位于（0,0,0）处，并且我们从前面看它。头部的朝向是由美工创建和保存网格时的朝向决定的。Ogre关于你的模型朝向不做假设。你加载的每个网格模型可能有不同的初始化朝向。
+    Ogre使用向量类去表示位置与方向（Ogre中没有Point类）。Ogre定义了2维(Vector2)、3维(Vector3)、4维向量(Vector4)，其中3维向量是使用的最多的。如果你对向量不熟悉，那么在你学习Ogre系列教材之前你应该去这儿看看（http://www.wildbunny.co.uk/blog/vector-maths-a-primer-for-games-programmers/）。如果你从事复杂的项目，那么理解向量背后的数学知识是非常有用的。
     
+ 再添加一个对象
+ ————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
+ 	既然你已经理解了坐标系统的工作原理，我们就可以回到我们的代码。在我们写下的三行代码中，我们没有在任何地方指出Ogre Head的位置。Ogre中有大量的函数已经为你设定了默认的参数。例如SceneNode::createChildSceneNode成员函数有3个参数：场景节点的名称、场景节点的位置和场景节点朝向的初始旋转角度（方向）。正如你所看到的，位置被设为（0,0,0）。让我们创建另外一个节点，但是这次我们将指定起始位置而不是原点去做点事情。
+ 	Ogre::Entity* ogreHead2 = mSceneMgr->createEntity( "Head2", "ogrehead.mesh" );
+	Ogre::SceneNode* headNode2 = mSceneMgr->getRootSceneNode()->createChildSceneNode( "HeadNode2", Ogre::Vector3( 100, 0, 0 ) );
+	headNode2->attachObject( ogreHead2 );
+	
+	这看起来和我们之前做的一样，但是有两处例外。首先，我们给实体和场景节点的命名有一点区别。第二，我们将实体的起始位置设为沿着x方向离根场景节点100单位处（记住：所有的场景节点的位置都是相对于其父节点的）。编译并运行这个程序，现在有2个并排的Ogre Head。你可能需要使用s键或者Down方向键向后移动才能看到2个Ogre Head。
+	
+深入了解实体（Entity）
+—————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
+	实体（Entity）类非常广泛，对于我们开始学习来说，我们不需要包含了解这个对象每一个部分。但是现在指出在Entity类中几个有用的成员函数。
+	第一个是Entity::setVisible和Entity::isVisible。通过简单的调用这个函数设置实体是否可见。如果你需要隐藏一个实体，但是之后显示它，那么应该调用这个函数而不是摧毁对象之后再创建它。
+	在实体上你不需要“实体池”。任何对象的网格模型和纹理只有一份会被载入内存中，因此你不需要花费时间去自己保存它。你唯一需要花时间的是对象的构造和析构，这相对来说代价比较小。
+	 getName函数返回实体的名称， getParentSceneNode函数返回实体附于的节点。
+	 
+深入了解场景节点（SceneNode）
+—————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
+    SceneNode类非常复杂，一个SceneNode有很多事情需要处理，因此我们只介绍几个最有用的方法。
+    你可以通过调用getPosition和setPosition函数设定场景节点的位置（相对于父场景节点）。你可以调用translate函数移动对象的位置（相对于当前的位置）。
+    SceneNode不仅能设定位置，还能管理对象的缩放和旋转。你可以通过scale函数来缩放对象。你可以使用pitch、yaw和roll函数旋转对象。你可以使用resetOrientation函数重置对于对象的旋转。你也可以使用setOrientation、getOrientation和rotate函数完成更复杂的旋转操作。我们要到比较后面的教程才会涉及四元数（Quaternion）。
+    你已经见过了 attachObject函数，如果你想操作附加到场景节点上的对象，那么相关的函数是很有用的：numAttachedObjects、getAttachedObject（这个函数都有多个版本） 、detachObject（同样有多个版本） 、detachAllObjects。同样有一整套函数处理父场景节点和子场景节点。
+    因为位置和平移都是相对于父场景节点的，我们可以很容易的让两个节点一起移动。我们的程序的当前代码如下：
+    -------------------------------------------------------------------------------------------------------------------------
+    mSceneMgr->setAmbientLight(Ogre::ColourValue(1.0, 1.0, 1.0));
+ 
+    Ogre::Entity* ogreHead = mSceneMgr->createEntity("Head", "ogrehead.mesh");
+    Ogre::SceneNode* headNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("HeadNode");
+    headNode->attachObject(ogreHead);
+ 
+    Ogre::Entity* ogreHead2 = mSceneMgr->createEntity( "Head2", "ogrehead.mesh" );
+    Ogre::SceneNode* headNode2 = mSceneMgr->getRootSceneNode()->createChildSceneNode( "HeadNode2", Ogre::Vector3( 100, 0, 0 ) );
+    headNode2->attachObject( ogreHead2 );
+    -------------------------------------------------------------------------------------------------------------------------
+    如果我们将第6行从：
+    Ogre::SceneNode* headNode2 = mSceneMgr->getRootSceneNode()->createChildSceneNode( "HeadNode2", Ogre::Vector3( 100, 0, 0 ) );
+    改为：
+    Ogre::SceneNode* headNode2 = headNode->createChildSceneNode( "HeadNode2", Ogre::Vector3( 100, 0, 0 ) );
     
+    那么我们将headNode2变为headNode的孩子。移动headNode也会移动headNode2，但是移动headNode2不会影响headNode。例如下面的代码将会只移动headNode2：
+    headNode2->translate( Ogre::Vector3( 10, 0, 10 ) );
+    下面的代码将会移动headNode，因为headNode2是headNode的孩子，所以headNode2也会被移动。
+    headNode->translate( Ogre::Vector3( 25, 0, 0 ) );
+    如果你对于这有疑问，最简单的的就是从根场景节点开始然后往下。开始时headNode位于（0,0,0），接着让它移动（25,0,0），headNode相对于它的父节点的位置为（25,0,0）。headNode2的起始位置为（100,0,0），我们让它移动（10,0,10），因此它的新位置相对于它的父节点为（110,0,10）
+    现在让我们指出实际情况是怎么回事。从根场景节点开始，它的位置总是（0,0,0）。现在headNode的位置为（root + headNode）:(0,0,0) + (25,0,0) = (25,0,0)。没什么奇怪的。
+    headNode2是headNode的子节点，因此它的位置为（root + headNode + headNode2）:(0,0,0) + (25,0,0) + (110,0,10) = (135,0,10).
+    这只是一个解释如何理解场景节点的位置继承的例子。你很少需要计算你的节点的绝对位置。最后，注意你可以通过名称调用场景管理器的getSceneNode和getEntity函数得到场景节点和实体，所以你不需要一个指针指向你创建的每一个场景节点。尽管如此，你也应该把那些经常使用的对象记录下来。
     
+    应该尝试做的事
+    —————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
+    现在你应该对实体、场景节点和场景管理器有一个基本的掌握。我们建议从上面的节点开始从场景中添加或者移除Ogre head。如果你已经完成了，清除createScene方法中的所有代码，和下面的每个代码段一起玩耍吧。
+    
+    缩放
+    -------------------------------------------------------------------------------------------------------------------------
+    你可以调用场景节点的scale方法对网格模型进行缩放。尝试改变scale函数中的值，看看会发生什么：
+    -------------------------------------------------------------------------------------------------------------------------
+    mSceneMgr->setAmbientLight(Ogre::ColourValue(1.0, 1.0, 1.0));
+ 
+    Ogre::Entity* ogreHead = mSceneMgr->createEntity("Head", "ogrehead.mesh");
+    Ogre::SceneNode* headNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("HeadNode");
+    headNode->attachObject(ogreHead);
+ 
+    headNode->scale( .5, 1, 2 ); 
+ 
+    Ogre::Entity* ogreHead2 = mSceneMgr->createEntity( "Head2", "ogrehead.mesh" );
+    Ogre::SceneNode* headNode2 = mSceneMgr->getRootSceneNode()->createChildSceneNode( "HeadNode2", Ogre::Vector3( 100, 0, 0 ) );
+    headNode2->attachObject( ogreHead2 );
+    -------------------------------------------------------------------------------------------------------------------------
+    
+    旋转
+    -------------------------------------------------------------------------------------------------------------------------
+    你可以通过yaw、pitch和roll函数旋转对象，参数可以为Degree(角度)或者Radian(弧度)。Pitch函数绕x轴旋转,yaw绕y轴旋转、roll绕z轴旋转。伸出你的右手，将你的大拇指指向轴的方向，弯曲剩下的手指，手指弯曲的放线就是沿该轴旋转的正方向。
+    请尝试改变角度并组合多种转换方式：
+    ---------------------------------------------------code start------------------------------------------------------------
+    mSceneMgr->setAmbientLight(Ogre::ColourValue(1.0, 1.0, 1.0));
+ 
+    Ogre::Entity* ogreHead = mSceneMgr->createEntity("Head", "ogrehead.mesh");
+    Ogre::SceneNode* headNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("HeadNode");
+    headNode->attachObject(ogreHead);
+ 
+    headNode->yaw( Ogre::Degree( -90 ) );
+ 
+    Ogre::Entity* ogreHead2 = mSceneMgr->createEntity( "Head2", "ogrehead.mesh" );
+    Ogre::SceneNode* headNode2 = mSceneMgr->getRootSceneNode()->createChildSceneNode( "HeadNode2", Ogre::Vector3( 100, 0, 0 ) );
+    headNode2->attachObject( ogreHead2 );
+ 
+    headNode2->pitch( Ogre::Degree( -90 ) );
+ 
+    Ogre::Entity* ogreHead3 = mSceneMgr->createEntity( "Head3", "ogrehead.mesh" );
+    Ogre::SceneNode* headNode3 = mSceneMgr->getRootSceneNode()->createChildSceneNode( "HeadNode3", Ogre::Vector3( 200, 0, 0 ) );
+    headNode3->attachObject( ogreHead3 );
+ 
+    headNode3->roll( Ogre::Degree( -90 ) );
+ 
+    headNode2->scale( 1, 2, 1 );
+    --------------------------------------------------code end---------------------------------------------------------------
+    在Microsoft Visual Studio 2010可能会产生错误：Degree是一个未声明的标示符。可以通过调用Ogre::Degree来解决。
+    
+    Ogre环境
+    —————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
+        本节中（整个教程）提到的大部分文件（.DLL,.CFG）都可以再OgreSDK的bin文件夹中的debug或release子文件夹中找到。Debug程序    应该使用OgreSDK中的debug文件夹，Release程序应该使用OgreSDK中的release文件夹。
+        
+        Windows,Linux和OSX
+        本小节中大量使用Windows的名称。相同的信息基本可以应用在Linux和Mac OS X,但是有些事情可能有点细微的差异，例如共享库一.so结尾放在可以替换的位置（没看懂）。如果你有问题，将你的问题发布到论坛上（http://www.ogre3d.org/forums/viewforum.php?f=2）。
+        
+        DLL和插件
+        ---------------------------------------------------------------------------------------------------------------------
+            既然我们要用到Ogre环境。我将大致的解释一下Ogre库是如何工作的，它将有助于你的工作。
+            Ogre分为3个大的共享库组：main library,plugins和third-party libraries。
+            
+            Main library
+            -----------------------------------------------------------------------------------------------------------------
+            
